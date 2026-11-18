@@ -12,9 +12,6 @@ content="width=device-width, initial-scale=1.0">
 Contact Angle Analyzer
 </title>
 
-<link rel="manifest"
-href="manifest.json">
-
 <script src="https://cdn.tailwindcss.com">
 </script>
 
@@ -24,55 +21,41 @@ src="https://docs.opencv.org/4.x/opencv.js">
 
 <style>
 
-body{
-background:#f3f4f6;
-}
-
-.card{
-background:white;
-border-radius:16px;
-padding:20px;
-box-shadow:
-0 4px 12px rgba(
-0,0,0,.08
-);
-}
-
 canvas{
 max-width:100%;
+border-radius:10px;
 border:1px solid #ddd;
-border-radius:12px;
 }
 
 </style>
 
 </head>
 
-<body>
+<body class="bg-slate-100">
 
 <div
-class="max-w-6xl mx-auto p-4">
+class="
+max-w-6xl
+mx-auto
+p-4">
 
 <h1
 class="
 text-3xl
 font-bold
-text-center
-mb-2">
+text-center">
 
-Contact Angle
-Analyzer Pro
+Contact Angle Analyzer
 
 </h1>
 
 <p
 class="
 text-center
-text-gray-500
+text-gray-600
 mb-6">
 
-OpenCV Contact Angle
-Measurement
+OpenCV.js + Ellipse Fitting
 
 </p>
 
@@ -83,27 +66,17 @@ lg:grid-cols-3
 gap-6">
 
 <div
-class="card">
-
-<label
 class="
-block
-font-semibold
-mb-2">
-
-Upload Image
-
-</label>
+bg-white
+p-5
+rounded-xl
+shadow">
 
 <input
 type="file"
 id="imageInput"
 accept="image/*"
-class="
-w-full
-border
-p-2
-rounded">
+class="w-full">
 
 <button
 id="measureBtn"
@@ -115,17 +88,69 @@ text-white
 p-3
 rounded">
 
-📐 Measure Contact Angle
+Measure
+
+</button>
+
+<button
+id="exportCsvBtn"
+class="
+w-full
+mt-2
+bg-green-600
+text-white
+p-3
+rounded">
+
+Export CSV
+
+</button>
+
+<button
+id="exportPngBtn"
+class="
+w-full
+mt-2
+bg-purple-600
+text-white
+p-3
+rounded">
+
+Export PNG
 
 </button>
 
 <div
-id="statusBox"
-class="
-hidden
-mt-4
-p-3
-rounded">
+id="resultBox"
+class="mt-5">
+
+<div>
+Left :
+<span id="leftAngle">
+--
+</span>
+</div>
+
+<div>
+Right :
+<span id="rightAngle">
+--
+</span>
+</div>
+
+<div>
+Average :
+<span id="avgAngle">
+--
+</span>
+</div>
+
+<div>
+Surface :
+<span id="surfaceText">
+--
+</span>
+</div>
 
 </div>
 
@@ -133,170 +158,93 @@ rounded">
 
 <div
 class="
-card
+bg-white
+p-4
+rounded-xl
+shadow
 lg:col-span-2">
 
-<div
-class="
-flex
-justify-center">
-
 <canvas
-id="imageCanvas">
+id="canvas">
 </canvas>
 
 </div>
 
 </div>
 
-</div>
-
-<div
-id="resultBox"
-class="
-card
-mt-6
-hidden">
-
-<h2
-class="
-text-xl
-font-bold
-mb-4">
-
-Result
-
-</h2>
-
-<div
-class="
-grid
-md:grid-cols-3
-gap-4">
-
-<div
-class="
-bg-blue-50
-p-4
-rounded">
-
-<div>
-Angle
-</div>
-
-<div
-id="angleResult"
-class="
-text-4xl
-font-bold">
-
---
-
-</div>
-
-</div>
-
-<div
-class="
-bg-green-50
-p-4
-rounded">
-
-<div>
-Surface
-</div>
-
-<div
-id="surfaceResult"
-class="
-text-xl
-font-bold">
-
---
-
-</div>
-
-</div>
-
-<div
-class="
-bg-yellow-50
-p-4
-rounded">
-
-<div>
-Method
-</div>
-
-<div
-id="methodResult"
-class="
-text-xl
-font-bold">
-
-OpenCV
-
-</div>
-
-</div>
-
-</div>
-
-<div
-id="detailResult"
-class="
-mt-4">
-
-</div>
-
-</div>
-
 <script>
-
-let currentImage=null;
-
-let canvas=
+let canvas =
 document.getElementById(
-"imageCanvas"
+"canvas"
 );
 
-let ctx=
+let ctx =
 canvas.getContext(
 "2d"
 );
 
-let imageInput=
-document.getElementById(
+let currentImage =
+null;
+
+let lastResult =
+null;
+
+document
+.getElementById(
 "imageInput"
+)
+.addEventListener(
+"change",
+function(e){
+
+const file =
+e.target.files[0];
+
+if(!file)
+return;
+
+const reader =
+new FileReader();
+
+reader.onload =
+function(event){
+
+const img =
+new Image();
+
+img.onload =
+function(){
+
+currentImage =
+img;
+
+canvas.width =
+img.width;
+
+canvas.height =
+img.height;
+
+ctx.drawImage(
+img,
+0,
+0
 );
 
-function showStatus(
-msg,
-error=false
-){
+};
 
-const box=
-document.getElementById(
-"statusBox"
+img.src =
+event.target.result;
+
+};
+
+reader.readAsDataURL(
+file
 );
-
-box.classList.remove(
-"hidden"
-);
-
-box.className=
-error
-?
-"mt-4 p-3 rounded bg-red-100 text-red-700"
-:
-"mt-4 p-3 rounded bg-green-100 text-green-700";
-
-box.innerHTML=
-msg;
 
 }
+);
 
-function classifySurface(
+function classify(
 angle
 ){
 
@@ -316,92 +264,39 @@ return
 "Superhydrophobic";
 
 }
-
-imageInput
-.addEventListener(
-"change",
-function(e){
-
-const file=
-e.target.files[0];
-
-if(!file)
-return;
-
-const reader=
-new FileReader();
-
-reader.onload=
-function(event){
-
-const img=
-new Image();
-
-img.onload=
-function(){
-
-currentImage=
-img;
-
-canvas.width=
-img.width;
-
-canvas.height=
-img.height;
-
-ctx.drawImage(
-img,
-0,
-0
-);
-
-};
-
-img.src=
-event.target.result;
-
-};
-
-reader.readAsDataURL(
-file
-);
-
-});
-
-async function detectDroplet(){
+function findDropletContour(){
 
 if(
-typeof cv === "undefined"
+typeof cv ===
+"undefined"
 ){
 
-showStatus(
-"OpenCV ยังโหลดไม่เสร็จ",
-true
+alert(
+"OpenCV ยังโหลดไม่เสร็จ"
 );
 
 return null;
 
 }
 
-if(!currentImage){
+if(
+currentImage===null
+){
 
-showStatus(
-"กรุณาอัปโหลดรูปภาพ",
-true
+alert(
+"กรุณาอัปโหลดรูปภาพ"
 );
 
 return null;
 
 }
 
-try{
-
-let src=
+let src =
 cv.imread(
 canvas
 );
 
-let gray=
+let gray =
 new cv.Mat();
 
 cv.cvtColor(
@@ -410,7 +305,7 @@ gray,
 cv.COLOR_RGBA2GRAY
 );
 
-let blur=
+let blur =
 new cv.Mat();
 
 cv.GaussianBlur(
@@ -423,7 +318,7 @@ new cv.Size(
 0
 );
 
-let thresh=
+let thresh =
 new cv.Mat();
 
 cv.threshold(
@@ -435,10 +330,10 @@ cv.THRESH_BINARY_INV +
 cv.THRESH_OTSU
 );
 
-let contours=
+let contours =
 new cv.MatVector();
 
-let hierarchy=
+let hierarchy =
 new cv.Mat();
 
 cv.findContours(
@@ -446,11 +341,13 @@ thresh,
 contours,
 hierarchy,
 cv.RETR_EXTERNAL,
-cv.CHAIN_APPROX_SIMPLE
+cv.CHAIN_APPROX_NONE
 );
 
-let largestArea=0;
-let largestContour=null;
+let maxArea = 0;
+
+let largestContour =
+null;
 
 for(
 let i=0;
@@ -458,22 +355,23 @@ i<contours.size();
 i++
 ){
 
-let c=
+let contour =
 contours.get(i);
 
-let area=
-cv.contourArea(c);
+let area =
+cv.contourArea(
+contour
+);
 
 if(
-area >
-largestArea
+area > maxArea
 ){
 
-largestArea=
+maxArea =
 area;
 
-largestContour=
-c;
+largestContour =
+contour;
 
 }
 
@@ -483,407 +381,715 @@ if(
 largestContour===null
 ){
 
-throw new Error(
+alert(
 "ไม่พบหยดน้ำ"
 );
-
-}
-
-let rect=
-cv.boundingRect(
-largestContour
-);
-
-ctx.strokeStyle=
-"#ef4444";
-
-ctx.lineWidth=3;
-
-ctx.strokeRect(
-rect.x,
-rect.y,
-rect.width,
-rect.height
-);
-
-let topPoint={
-x:
-rect.x +
-(rect.width/2),
-y:
-rect.y
-};
-
-let leftPoint={
-x:rect.x,
-y:
-rect.y +
-rect.height
-};
-
-let rightPoint={
-x:
-rect.x +
-rect.width,
-y:
-rect.y +
-rect.height
-};
-
-ctx.fillStyle=
-"red";
-
-ctx.beginPath();
-
-ctx.arc(
-topPoint.x,
-topPoint.y,
-6,
-0,
-Math.PI*2
-);
-
-ctx.fill();
-
-ctx.fillStyle=
-"blue";
-
-ctx.beginPath();
-
-ctx.arc(
-leftPoint.x,
-leftPoint.y,
-6,
-0,
-Math.PI*2
-);
-
-ctx.fill();
-
-ctx.beginPath();
-
-ctx.arc(
-rightPoint.x,
-rightPoint.y,
-6,
-0,
-Math.PI*2
-);
-
-ctx.fill();
 
 src.delete();
 gray.delete();
 blur.delete();
 thresh.delete();
-hierarchy.delete();
 contours.delete();
-
-return {
-
-rect,
-topPoint,
-leftPoint,
-rightPoint
-
-};
-
-}
-catch(error){
-
-console.error(
-error
-);
-
-showStatus(
-error.message,
-true
-);
+hierarchy.delete();
 
 return null;
 
 }
 
-}
+ctx.clearRect(
+0,
+0,
+canvas.width,
+canvas.height
+);
 
-function drawGuideLine(
-p1,
-p2,
-color="#22c55e"
+ctx.drawImage(
+currentImage,
+0,
+0
+);
+
+ctx.strokeStyle =
+"red";
+
+ctx.lineWidth =
+2;
+
+let data =
+largestContour.data32S;
+
+for(
+let i=0;
+i<data.length;
+i+=2
 ){
+
+const x =
+data[i];
+
+const y =
+data[i+1];
+
+if(i===0){
 
 ctx.beginPath();
 
 ctx.moveTo(
-p1.x,
-p1.y
+x,
+y
 );
+
+}else{
 
 ctx.lineTo(
-p2.x,
-p2.y
+x,
+y
 );
 
-ctx.strokeStyle=
-color;
+}
 
-ctx.lineWidth=
-2;
+}
+
+ctx.closePath();
 
 ctx.stroke();
 
-}
+gray.delete();
+blur.delete();
+thresh.delete();
+contours.delete();
+hierarchy.delete();
 
-function estimateRadius(
-rect
-){
+return {
 
-return
-Math.max(
-rect.width,
-rect.height
-)/2;
+src,
+contour:
+largestContour
 
-}
-
-function calculateTangentAngle(
-contactPoint,
-centerPoint
-){
-
-const dx=
-contactPoint.x-
-centerPoint.x;
-
-const dy=
-contactPoint.y-
-centerPoint.y;
-
-let normal=
-Math.atan2(
-dy,
-dx
-);
-
-let tangent=
-normal+
-(Math.PI/2);
-
-let degree=
-tangent*
-180/
-Math.PI;
-
-degree=
-Math.abs(
-degree
-);
-
-degree=
-degree%180;
-
-if(
-degree>90
-){
-
-degree=
-180-degree;
-
-}
-
-return degree;
-
-}
-async function measureContactAngle(){
-
-const result=
-await detectDroplet();
-
-if(!result){
-
-return;
-
-}
-
-const rect=
-result.rect;
-
-const top=
-result.topPoint;
-
-const left=
-result.leftPoint;
-
-const right=
-result.rightPoint;
-
-const center={
-x:
-rect.x +
-(rect.width/2),
-
-y:
-rect.y +
-(rect.height/2)
 };
 
-drawGuideLine(
-center,
-left
-);
-
-drawGuideLine(
-center,
-right
-);
-
-const leftAngle=
-calculateTangentAngle(
-left,
-center
-);
-
-const rightAngle=
-calculateTangentAngle(
-right,
-center
-);
-
-const averageAngle=
-(
-leftAngle+
-rightAngle
-)/2;
-
-document
-.getElementById(
-"angleResult"
-)
-.innerHTML=
-averageAngle.toFixed(1)
-+"°";
-
-document
-.getElementById(
-"surfaceResult"
-)
-.innerHTML=
-classifySurface(
-averageAngle
-);
-
-document
-.getElementById(
-"methodResult"
-)
-.innerHTML=
-"OpenCV";
-
-document
-.getElementById(
-"detailResult"
-)
-.innerHTML=
-`
-<div class="space-y-2">
-
-<div>
-Left Angle :
-<b>
-${leftAngle.toFixed(1)}°
-</b>
-</div>
-
-<div>
-Right Angle :
-<b>
-${rightAngle.toFixed(1)}°
-</b>
-</div>
-
-<div>
-Average :
-<b>
-${averageAngle.toFixed(1)}°
-</b>
-</div>
-
-<div>
-Contour Width :
-<b>
-${rect.width}px
-</b>
-</div>
-
-<div>
-Contour Height :
-<b>
-${rect.height}px
-</b>
-</div>
-
-</div>
-`;
-
-document
-.getElementById(
-"resultBox"
-)
-.classList.remove(
-"hidden"
-);
-
-showStatus(
-"วิเคราะห์สำเร็จ"
-);
-
 }
-
 document
 .getElementById(
 "measureBtn"
 )
 .addEventListener(
 "click",
-measureContactAngle
+()=>{
+
+const fit =
+fitDropletEllipse();
+
+if(fit){
+
+console.log(
+"Ellipse fitted"
+);
+
+}
+
+});
+function detectBaseline(
+contour
+){
+
+const points =
+contour.data32S;
+
+let maxY = 0;
+
+for(
+let i=1;
+i<points.length;
+i+=2
+){
+
+if(
+points[i] > maxY
+){
+
+maxY =
+points[i];
+
+}
+
+}
+
+return maxY;
+
+}
+function detectContactPoints(
+contour,
+baselineY
+){
+
+const points =
+contour.data32S;
+
+let leftPoint =
+null;
+
+let rightPoint =
+null;
+
+const tolerance =
+5;
+
+for(
+let i=0;
+i<points.length;
+i+=2
+){
+
+const x =
+points[i];
+
+const y =
+points[i+1];
+
+if(
+Math.abs(
+y-baselineY
+)
+<
+tolerance
+){
+
+if(
+leftPoint===null ||
+x < leftPoint.x
+){
+
+leftPoint = {
+
+x:x,
+y:y
+
+};
+
+}
+
+if(
+rightPoint===null ||
+x > rightPoint.x
+){
+
+rightPoint = {
+
+x:x,
+y:y
+
+};
+
+}
+
+}
+
+}
+
+return {
+
+left:leftPoint,
+
+right:rightPoint
+
+};
+
+}
+
+function fitDropletEllipse(){
+const baselineY =
+detectBaseline(
+contour
+);
+
+const contacts =
+detectContactPoints(
+contour,
+baselineY
+);
+ctx.strokeStyle =
+"orange";
+
+ctx.lineWidth =
+2;
+
+ctx.beginPath();
+
+ctx.moveTo(
+0,
+baselineY
+);
+
+ctx.lineTo(
+canvas.width,
+baselineY
+);
+
+ctx.stroke();
+
+return {
+
+centerX,
+centerY,
+
+majorAxis,
+minorAxis,
+
+radius,
+
+baselineY,
+
+leftContact:
+contacts.left,
+
+rightContact:
+contacts.right,
+
+ellipse,
+contour
+
+};
+
+
+function drawTangent(
+point,
+slope
+){
+
+const length =
+60;
+
+const dx =
+length /
+Math.sqrt(
+1 +
+slope*slope
+);
+
+const dy =
+slope * dx;
+
+ctx.beginPath();
+
+ctx.moveTo(
+point.x-dx,
+point.y-dy
+);
+
+ctx.lineTo(
+point.x+dx,
+point.y+dy
+);
+
+ctx.stroke();
+
+}
+
+function calculateContactAngle(){
+
+   const fit =
+   fitDropletEllipse();
+
+   ...
+
+}
+
+function calculateContactAngle(){
+
+const fit =
+fitDropletEllipse();
+
+if(!fit){
+
+return;
+
+}
+
+const ellipse =
+fit.ellipse;
+
+const centerX =
+fit.centerX;
+
+const centerY =
+fit.centerY;
+
+const a =
+ellipse.size.width/2;
+
+const b =
+ellipse.size.height/2;
+
+const angleRad =
+ellipse.angle *
+Math.PI /
+180;
+
+const leftContact =
+fit.leftContact;
+
+const rightContact =
+fit.rightContact;
+
+if(
+!leftContact ||
+!rightContact
+){
+
+alert(
+"ไม่พบ Contact Point"
+);
+
+return;
+
+}
+
+
+ctx.fillStyle =
+"blue";
+
+ctx.beginPath();
+
+ctx.arc(
+leftContact.x,
+leftContact.y,
+6,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+
+ctx.beginPath();
+
+ctx.arc(
+rightContact.x,
+rightContact.y,
+6,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+
+const leftFit =
+estimateContourTangent(
+fit.contour,
+leftContact
+);
+
+const rightFit =
+estimateContourTangent(
+fit.contour,
+rightContact
+);
+
+const leftSlope =
+leftFit.slope;
+
+const rightSlope =
+rightFit.slope;
+
+
+const leftAngle =
+let leftAngle =
+Math.atan(
+leftSlope
+)
+*
+180/
+Math.PI;
+
+let rightAngle =
+Math.atan(
+rightSlope
+)
+*
+180/
+Math.PI;
+
+leftAngle =
+Math.abs(
+leftAngle
+);
+
+rightAngle =
+Math.abs(
+rightAngle
 );
 
 if(
-"serviceWorker"
-in navigator
+leftAngle > 90
 ){
 
-window
-.addEventListener(
-"load",
-()=>{
+leftAngle =
+180-leftAngle;
 
-navigator
-.serviceWorker
-.register(
-"./service-worker.js"
+}
+
+if(
+rightAngle > 90
+){
+
+rightAngle =
+180-rightAngle;
+
+}
+
+
+const averageAngle =
+
+(
+leftAngle+
+rightAngle
+)/2;
+
+ctx.strokeStyle =
+"cyan";
+
+ctx.lineWidth =
+2;
+
+drawTangent(
+leftContact,
+leftSlope
+);
+
+drawTangent(
+rightContact,
+rightSlope
+);
+
+document
+.getElementById(
+"leftAngle"
 )
-.then(()=>{
+.innerHTML =
+leftAngle
+.toFixed(1)
++"°";
 
-console.log(
-"SW Registered"
+document
+.getElementById(
+"rightAngle"
+)
+.innerHTML =
+rightAngle
+.toFixed(1)
++"°";
+
+document
+.getElementById(
+"avgAngle"
+)
+.innerHTML =
+averageAngle
+.toFixed(1)
++"°";
+
+document
+.getElementById(
+"surfaceText"
+)
+.innerHTML =
+classify(
+averageAngle
 );
 
-})
-.catch(
-console.error
+lastResult = {
+
+left:
+leftAngle,
+
+right:
+rightAngle,
+
+average:
+averageAngle
+
+};
+
+}
+function exportCSV(){
+
+if(
+lastResult===null
+){
+
+alert(
+"ยังไม่มีผลการวัด"
 );
 
+return;
+
+}
+
+const csv =
+
+`Left Angle,Right Angle,Average Angle,Surface
+${lastResult.left.toFixed(2)},
+${lastResult.right.toFixed(2)},
+${lastResult.average.toFixed(2)},
+${classify(lastResult.average)}
+`;
+
+const blob =
+new Blob(
+[csv],
+{
+type:
+"text/csv"
 }
 );
 
-}
-
-console.log(
-"Contact Angle Analyzer Ready"
+const url =
+URL.createObjectURL(
+blob
 );
 
-</script>
+const a =
+document.createElement(
+"a"
+);
 
-</body>
-</html>
+a.href = url;
+
+a.download =
+"contact_angle.csv";
+
+a.click();
+
+URL.revokeObjectURL(
+url
+);
+
+}
+function exportPNG(){
+
+if(
+currentImage===null
+){
+
+alert(
+"ไม่มีภาพ"
+);
+
+return;
+
+}
+
+const link =
+document.createElement(
+"a"
+);
+
+link.download =
+"contact_angle_result.png";
+
+link.href =
+canvas.toDataURL(
+"image/png"
+);
+
+link.click();
+
+}
+document
+.getElementById(
+"exportCsvBtn"
+)
+.addEventListener(
+"click",
+exportCSV
+);
+document
+.getElementById(
+"exportPngBtn"
+)
+.addEventListener(
+"click",
+exportPNG
+);
+function estimateContourTangent(
+contour,
+contactPoint
+){
+
+const points =
+contour.data32S;
+
+let nearestIndex = -1;
+let minDistance =
+Infinity;
+
+for(
+let i=0;
+i<points.length;
+i+=2
+){
+
+const x =
+points[i];
+
+const y =
+points[i+1];
+
+const d =
+Math.hypot(
+x-contactPoint.x,
+y-contactPoint.y
+);
+
+if(
+d < minDistance
+){
+
+minDistance = d;
+nearestIndex = i;
+
+}
+
+}
+
+const step = 20;
+
+let prev =
+Math.max(
+0,
+nearestIndex-step
+);
+
+let next =
+Math.min(
+points.length-2,
+nearestIndex+step
+);
+
+const x1 =
+points[prev];
+
+const y1 =
+points[prev+1];
+
+const x2 =
+points[next];
+
+const y2 =
+points[next+1];
+
+const slope =
+(y2-y1) /
+((x2-x1)+0.0001);
+
+return {
+
+slope,
+x1,
+y1,
+x2,
+y2
+
+};
+
+}
