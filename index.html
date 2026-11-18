@@ -45,8 +45,8 @@
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">2. เลือกโมเดล AI</label>
             <select id="modelSelect" class="w-full border border-gray-300 p-2 rounded-md focus:ring focus:ring-blue-200 outline-none">
-              <option value="gemini-1.5-flash">Gemini 1.5 Flash (แนะนำ)</option>
-              <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash (แนะนำ)</option>
+              <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
             </select>
           </div>
           <div>
@@ -211,7 +211,6 @@
       }
     }
 
-    // รองรับทั้งเมาส์และการจิ้มบนหน้าจอมือถือ
     canvas.addEventListener('pointerdown', function(e) {
       if (currentMode !== 'manual' || !currentImage) return;
       if (points.length >= 3) return;
