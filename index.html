@@ -2,1638 +2,888 @@
 <html lang="th">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
 
-    <title>
-        Contact Angle Analyzer Pro
-    </title>
+<meta charset="UTF-8">
 
-    <link rel="manifest"
-          href="manifest.json">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
 
-    <script src="https://cdn.tailwindcss.com">
-    </script>
+<title>
+Contact Angle Analyzer
+</title>
 
-    <style>
+<link rel="manifest"
+href="manifest.json">
 
-        body{
-            background:#f3f4f6;
-        }
+<script src="https://cdn.tailwindcss.com">
+</script>
 
-        canvas{
-            touch-action:none;
-        }
+<script async
+src="https://docs.opencv.org/4.x/opencv.js">
+</script>
 
-        .card{
-            background:white;
-            border-radius:16px;
-            box-shadow:
-            0 4px 12px rgba(
-                0,0,0,.08
-            );
-        }
+<style>
 
-    </style>
+body{
+background:#f3f4f6;
+}
+
+.card{
+background:white;
+border-radius:16px;
+padding:20px;
+box-shadow:
+0 4px 12px rgba(
+0,0,0,.08
+);
+}
+
+canvas{
+max-width:100%;
+border:1px solid #ddd;
+border-radius:12px;
+}
+
+</style>
 
 </head>
 
-<body class="min-h-screen">
+<body>
 
 <div
-class="max-w-6xl mx-auto p-4 md:p-6">
+class="max-w-6xl mx-auto p-4">
+
+<h1
+class="
+text-3xl
+font-bold
+text-center
+mb-2">
+
+Contact Angle
+Analyzer Pro
+
+</h1>
+
+<p
+class="
+text-center
+text-gray-500
+mb-6">
+
+OpenCV Contact Angle
+Measurement
+
+</p>
+
+<div
+class="
+grid
+lg:grid-cols-3
+gap-6">
+
+<div
+class="card">
+
+<label
+class="
+block
+font-semibold
+mb-2">
+
+Upload Image
+
+</label>
+
+<input
+type="file"
+id="imageInput"
+accept="image/*"
+class="
+w-full
+border
+p-2
+rounded">
+
+<button
+id="measureBtn"
+class="
+w-full
+mt-4
+bg-blue-600
+text-white
+p-3
+rounded">
+
+📐 Measure Contact Angle
+
+</button>
 
-    <div
-    class="text-center mb-8">
+<div
+id="statusBox"
+class="
+hidden
+mt-4
+p-3
+rounded">
+
+</div>
+
+</div>
+
+<div
+class="
+card
+lg:col-span-2">
+
+<div
+class="
+flex
+justify-center">
 
-        <h1
-        class="text-3xl font-bold
-               text-gray-800">
+<canvas
+id="imageCanvas">
+</canvas>
 
-            Contact Angle
-            Analyzer Pro
+</div>
 
-        </h1>
+</div>
 
-        <p
-        class="text-gray-600 mt-2">
+</div>
 
-            วิเคราะห์มุมสัมผัส
-            (Contact Angle)
-            จากภาพหยดน้ำ
-            ด้วย AI
+<div
+id="resultBox"
+class="
+card
+mt-6
+hidden">
 
-        </p>
+<h2
+class="
+text-xl
+font-bold
+mb-4">
 
-    </div>
+Result
 
-    <div
-    class="grid
-           grid-cols-1
-           lg:grid-cols-3
-           gap-6">
+</h2>
 
-        <!-- LEFT PANEL -->
+<div
+class="
+grid
+md:grid-cols-3
+gap-4">
 
-        <div
-        class="card p-5
-               flex flex-col gap-4">
+<div
+class="
+bg-blue-50
+p-4
+rounded">
 
-            <div>
+<div>
+Angle
+</div>
 
-                <label
-                class="block
-                       text-sm
-                       font-semibold
-                       mb-2">
+<div
+id="angleResult"
+class="
+text-4xl
+font-bold">
 
-                    1. อัปโหลดรูปภาพ
+--
 
-                </label>
+</div>
 
-                <input
-                    type="file"
-                    id="imageInput"
-                    accept="image/*"
-                    class="w-full
-                           border
-                           border-gray-300
-                           rounded-md
-                           p-2">
+</div>
 
-            </div>
+<div
+class="
+bg-green-50
+p-4
+rounded">
 
-            <div>
+<div>
+Surface
+</div>
 
-                <label
-                class="block
-                       text-sm
-                       font-semibold
-                       mb-2">
+<div
+id="surfaceResult"
+class="
+text-xl
+font-bold">
 
-                    2. เลือก AI
+--
 
-                </label>
+</div>
 
-                <select
-                id="providerSelect"
-                class="w-full
-                       border
-                       border-gray-300
-                       rounded-md
-                       p-2">
+</div>
 
-                    <option value="gemini">
+<div
+class="
+bg-yellow-50
+p-4
+rounded">
 
-                        Google Gemini
+<div>
+Method
+</div>
 
-                    </option>
+<div
+id="methodResult"
+class="
+text-xl
+font-bold">
 
-                    <option value="openai">
+OpenCV
 
-                        OpenAI GPT
+</div>
 
-                    </option>
+</div>
 
-                    <option value="openrouter">
+</div>
 
-                        OpenRouter
+<div
+id="detailResult"
+class="
+mt-4">
 
-                    </option>
-
-                </select>
-
-            </div>
-
-            <div>
-
-                <label
-                class="block
-                       text-sm
-                       font-semibold
-                       mb-2">
-
-                    3. Model
-
-                </label>
-
-                <select
-                id="modelSelect"
-                class="w-full
-                       border
-                       border-gray-300
-                       rounded-md
-                       p-2">
-
-                    <option
-                    value="gemini-2.5-flash">
-
-                        Gemini 2.5 Flash
-
-                    </option>
-
-                    <option
-                    value="gemini-1.5-flash">
-
-                        Gemini 1.5 Flash
-
-                    </option>
-
-                    <option
-                    value="gpt-4o">
-
-                        GPT‑4o
-
-                    </option>
-
-                    <option
-                    value="gpt-4o-mini">
-
-                        GPT‑4o Mini
-
-                    </option>
-
-                    <option
-                    value="
-                    openai/gpt-4o">
-
-                        OpenRouter GPT‑4o
-
-                    </option>
-
-                </select>
-
-            </div>
-
-            <div>
-
-                <label
-                class="block
-                       text-sm
-                       font-semibold
-                       mb-2">
-
-                    4. API Key
-
-                </label>
-
-                <input
-                id="apiKeyInput"
-                type="password"
-                placeholder="
-                วาง API Key ที่นี่"
-                class="
-                w-full
-                border
-                border-gray-300
-                rounded-md
-                p-2">
-
-                <p
-                class="
-                text-xs
-                text-gray-500
-                mt-1">
-
-                Gemini =
-                Google AI Studio
-
-                <br>
-
-                OpenAI =
-                OpenAI API
-
-                <br>
-
-                OpenRouter =
-                OpenRouter Key
-
-                </p>
-
-            </div>
-
-            <button
-            id="analyzeBtn"
-            class="
-            bg-blue-600
-            hover:bg-blue-700
-            text-white
-            font-bold
-            py-3
-            rounded-md">
-
-                🔎 วิเคราะห์ Contact Angle
-
-            </button>
-
-            <button
-            id="clearBtn"
-            class="
-            bg-gray-200
-            hover:bg-gray-300
-            text-gray-800
-            font-semibold
-            py-3
-            rounded-md">
-
-                ล้างข้อมูล
-
-            </button>
-
-            <div
-            id="statusMessage"
-            class="
-            hidden
-            p-3
-            rounded-md
-            text-sm">
-
-            </div>
-
-        </div>
-
-        <!-- IMAGE AREA -->
-
-        <div
-        class="
-        card
-        p-4
-        lg:col-span-2
-        min-h-[500px]
-        flex
-        justify-center
-        items-center
-        relative">
-
-            <p
-            id="placeholderText"
-            class="
-            text-gray-400">
-
-            กรุณาอัปโหลดรูปภาพ
-
-            </p>
-
-            <canvas
-            id="imageCanvas"
-            class="
-            hidden
-            max-w-full
-            max-h-full">
-
-            </canvas>
-
-        </div>
-
-    </div>
-
-    <!-- RESULT -->
-
-    <div
-    id="aiResultContainer"
-    class="
-    hidden
-    card
-    mt-6
-    p-6">
-
-        <h2
-        class="
-        text-xl
-        font-bold
-        mb-4">
-
-            ผลการวิเคราะห์
-
-        </h2>
-
-        <div
-        class="
-        grid
-        md:grid-cols-3
-        gap-4">
-
-            <div
-            class="
-            bg-blue-50
-            rounded-xl
-            p-4">
-
-                <div
-                class="
-                text-sm
-                text-gray-600">
-
-                    Contact Angle
-
-                </div>
-
-                <div
-                id="angleResult"
-                class="
-                text-4xl
-                font-bold
-                text-blue-700">
-
-                    --
-
-                </div>
-
-            </div>
-
-            <div
-            class="
-            bg-green-50
-            rounded-xl
-            p-4">
-
-                <div
-                class="
-                text-sm
-                text-gray-600">
-
-                    Surface Type
-
-                </div>
-
-                <div
-                id="surfaceType"
-                class="
-                text-xl
-                font-bold
-                text-green-700">
-
-                    --
-
-                </div>
-
-            </div>
-
-            <div
-            class="
-            bg-yellow-50
-            rounded-xl
-            p-4">
-
-                <div
-                class="
-                text-sm
-                text-gray-600">
-
-                    Confidence
-
-                </div>
-
-                <div
-                id="confidence"
-                class="
-                text-xl
-                font-bold
-                text-yellow-700">
-
-                    --
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <hr class="my-6">
-
-        <div
-        id="aiResultText"
-        class="
-        whitespace-pre-wrap
-        leading-relaxed
-        text-gray-700">
-
-        </div>
-
-    </div>
+</div>
 
 </div>
 
 <script>
 
-let base64Image = null;
+let currentImage=null;
 
-let mimeType =
-'image/jpeg';
-
-let currentImage = null;
-
-const imageInput =
+let canvas=
 document.getElementById(
-'imageInput'
+"imageCanvas"
 );
 
-const canvas =
+let ctx=
+canvas.getContext(
+"2d"
+);
+
+let imageInput=
 document.getElementById(
-'imageCanvas'
+"imageInput"
 );
 
-const ctx =
-canvas.getContext('2d');
+function showStatus(
+msg,
+error=false
+){
 
-const placeholderText =
+const box=
 document.getElementById(
-'placeholderText'
+"statusBox"
 );
 
-document
-.addEventListener(
-'DOMContentLoaded',
-()=>{
-
-const savedKey =
-localStorage.getItem(
-'contact_angle_key'
+box.classList.remove(
+"hidden"
 );
 
-if(savedKey){
+box.className=
+error
+?
+"mt-4 p-3 rounded bg-red-100 text-red-700"
+:
+"mt-4 p-3 rounded bg-green-100 text-green-700";
 
-document
-.getElementById(
-'apiKeyInput'
-)
-.value = savedKey;
+box.innerHTML=
+msg;
 
 }
+
+function classifySurface(
+angle
+){
+
+if(angle<10)
+return
+"Superhydrophilic";
+
+if(angle<90)
+return
+"Hydrophilic";
+
+if(angle<150)
+return
+"Hydrophobic";
+
+return
+"Superhydrophobic";
+
+}
+
+imageInput
+.addEventListener(
+"change",
+function(e){
+
+const file=
+e.target.files[0];
+
+if(!file)
+return;
+
+const reader=
+new FileReader();
+
+reader.onload=
+function(event){
+
+const img=
+new Image();
+
+img.onload=
+function(){
+
+currentImage=
+img;
+
+canvas.width=
+img.width;
+
+canvas.height=
+img.height;
+
+ctx.drawImage(
+img,
+0,
+0
+);
+
+};
+
+img.src=
+event.target.result;
+
+};
+
+reader.readAsDataURL(
+file
+);
 
 });
-function showStatus(
-message,
-type="success"
+
+async function detectDroplet(){
+
+if(
+typeof cv === "undefined"
 ){
 
-const el =
-document.getElementById(
-"statusMessage"
+showStatus(
+"OpenCV ยังโหลดไม่เสร็จ",
+true
 );
 
-el.textContent =
-message;
-
-el.classList.remove(
-"hidden",
-"bg-red-100",
-"text-red-700",
-"bg-green-100",
-"text-green-700"
-);
-
-if(type==="error"){
-
-el.classList.add(
-"bg-red-100",
-"text-red-700"
-);
-
-}else{
-
-el.classList.add(
-"bg-green-100",
-"text-green-700"
-);
+return null;
 
 }
 
-}
-
-function hideStatus(){
-
-document
-.getElementById(
-"statusMessage"
-)
-.classList.add(
-"hidden"
-);
-
-}
-
-function classifySurface(
-angle
-){
-
-if(angle<10){
-
-return "Superhydrophilic";
-
-}
-
-if(angle<90){
-
-return "Hydrophilic";
-
-}
-
-if(angle<150){
-
-return "Hydrophobic";
-
-}
-
-return "Superhydrophobic";
-
-}
-
-imageInput.addEventListener(
-"click",
-function(){
-
-this.value = null;
-
-}
-);
-
-imageInput.addEventListener(
-"change",
-function(e){
-
-const file =
-e.target.files[0];
-
-if(!file){
-
-return;
-
-}
-
-mimeType =
-file.type ||
-"image/jpeg";
-
-const reader =
-new FileReader();
-
-reader.onload =
-function(event){
-
-const fullBase64 =
-event.target.result;
-
-base64Image =
-fullBase64.split(",")[1];
-
-const img =
-new Image();
-
-img.onload =
-function(){
-
-currentImage =
-img;
-
-canvas.width =
-img.width;
-
-canvas.height =
-img.height;
-
-canvas.classList.remove(
-"hidden"
-);
-
-placeholderText.classList.add(
-"hidden"
-);
-
-ctx.clearRect(
-0,
-0,
-canvas.width,
-canvas.height
-);
-
-ctx.drawImage(
-img,
-0,
-0
-);
-
-hideStatus();
-
-};
-
-img.src =
-fullBase64;
-
-};
-
-reader.readAsDataURL(
-file
-);
-
-}
-);
-
-document
-.getElementById(
-"clearBtn"
-)
-.addEventListener(
-"click",
-()=>{
-
-base64Image =
-null;
-
-currentImage =
-null;
-
-ctx.clearRect(
-0,
-0,
-canvas.width,
-canvas.height
-);
-
-canvas.classList.add(
-"hidden"
-);
-
-placeholderText.classList.remove(
-"hidden"
-);
-
-document
-.getElementById(
-"aiResultContainer"
-)
-.classList.add(
-"hidden"
-);
-
-hideStatus();
-
-}
-);
-
-function getPrompt(){
-
-return `
-You are an expert in:
-
-- Surface Chemistry
-- Contact Angle Analysis
-- Wetting Theory
-- ASTM Contact Angle Evaluation
-
-Analyze this droplet image.
-
-Estimate:
-
-1. Contact angle in degree
-2. Confidence score
-3. Surface type
-4. Short explanation
-
-Return only valid JSON.
-
-{
-  "contact_angle": 0,
-  "confidence": 0,
-  "surface_type": "",
-  "explanation": ""
-}
-`;
-
-}
-
-async function callGemini(
-model,
-key
-){
-
-const response =
-await fetch(
-`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-{
-method:"POST",
-
-headers:{
-"Content-Type":
-"application/json"
-},
-
-body:JSON.stringify({
-
-contents:[
-{
-
-parts:[
-
-{
-text:getPrompt()
-},
-
-{
-inline_data:{
-mime_type:mimeType,
-data:base64Image
-}
-}
-
-]
-
-}
-
-]
-
-})
-
-}
-);
-
-const data =
-await response.json();
-
-if(!response.ok){
-
-throw new Error(
-data?.error?.message ||
-"Gemini Error"
-);
-
-}
-
-return data
-?.candidates?.[0]
-?.content?.parts?.[0]
-?.text;
-
-}
-
-async function callOpenAI(
-model,
-key
-){
-
-const response =
-await fetch(
-"https://api.openai.com/v1/chat/completions",
-{
-
-method:"POST",
-
-headers:{
-
-Authorization:
-`Bearer ${key}`,
-
-"Content-Type":
-"application/json"
-
-},
-
-body:JSON.stringify({
-
-model:model,
-
-messages:[
-
-{
-
-role:"user",
-
-content:[
-
-{
-type:"text",
-text:getPrompt()
-},
-
-{
-type:"image_url",
-
-image_url:{
-
-url:
-`data:${mimeType};base64,${base64Image}`
-
-}
-
-}
-
-]
-
-}
-
-],
-
-temperature:0
-
-})
-
-}
-);
-
-const data =
-await response.json();
-
-if(!response.ok){
-
-throw new Error(
-data?.error?.message ||
-"OpenAI Error"
-);
-
-}
-
-return data
-?.choices?.[0]
-?.message?.content;
-
-}
-
-async function callOpenRouter(
-model,
-key
-){
-
-const response =
-await fetch(
-"https://openrouter.ai/api/v1/chat/completions",
-{
-
-method:"POST",
-
-headers:{
-
-Authorization:
-`Bearer ${key}`,
-
-"Content-Type":
-"application/json"
-
-},
-
-body:JSON.stringify({
-
-model:model,
-
-messages:[
-
-{
-
-role:"user",
-
-content:[
-
-{
-type:"text",
-text:getPrompt()
-},
-
-{
-type:"image_url",
-
-image_url:{
-
-url:
-`data:${mimeType};base64,${base64Image}`
-
-}
-
-}
-
-]
-
-}
-
-]
-
-})
-
-}
-);
-
-const data =
-await response.json();
-
-if(!response.ok){
-
-throw new Error(
-data?.error?.message ||
-"OpenRouter Error"
-);
-
-}
-
-return data
-?.choices?.[0]
-?.message?.content;
-
-}
-
-async function analyzeImage(){
-
-const provider =
-document
-.getElementById(
-"providerSelect"
-)
-.value;
-
-const model =
-document
-.getElementById(
-"modelSelect"
-)
-.value;
-
-const apiKey =
-document
-.getElementById(
-"apiKeyInput"
-)
-.value
-.trim();
-
-if(!base64Image){
+if(!currentImage){
 
 showStatus(
 "กรุณาอัปโหลดรูปภาพ",
-"error"
+true
 );
 
-return;
+return null;
 
 }
-
-if(!apiKey){
-
-showStatus(
-"กรุณาใส่ API Key",
-"error"
-);
-
-return;
-
-}
-
-localStorage.setItem(
-"contact_angle_key",
-apiKey
-);
-
-const btn =
-document
-.getElementById(
-"analyzeBtn"
-);
-
-btn.disabled = true;
-
-btn.innerHTML =
-"⏳ กำลังวิเคราะห์...";
-
-hideStatus();
-
-let resultText = "";
 
 try{
 
-if(provider==="gemini"){
-
-resultText =
-await callGemini(
-model,
-apiKey
+let src=
+cv.imread(
+canvas
 );
 
-}
+let gray=
+new cv.Mat();
 
-else if(
-provider==="openai"
-){
-
-resultText =
-await callOpenAI(
-model,
-apiKey
+cv.cvtColor(
+src,
+gray,
+cv.COLOR_RGBA2GRAY
 );
 
-}
+let blur=
+new cv.Mat();
 
-else if(
-provider==="openrouter"
-){
-
-resultText =
-await callOpenRouter(
-model,
-apiKey
-);
-
-}
-function showStatus(
-message,
-type="success"
-){
-
-const el =
-document.getElementById(
-"statusMessage"
-);
-
-el.textContent =
-message;
-
-el.classList.remove(
-"hidden",
-"bg-red-100",
-"text-red-700",
-"bg-green-100",
-"text-green-700"
-);
-
-if(type==="error"){
-
-el.classList.add(
-"bg-red-100",
-"text-red-700"
-);
-
-}else{
-
-el.classList.add(
-"bg-green-100",
-"text-green-700"
-);
-
-}
-
-}
-
-function hideStatus(){
-
-document
-.getElementById(
-"statusMessage"
-)
-.classList.add(
-"hidden"
-);
-
-}
-
-function classifySurface(
-angle
-){
-
-if(angle<10){
-
-return "Superhydrophilic";
-
-}
-
-if(angle<90){
-
-return "Hydrophilic";
-
-}
-
-if(angle<150){
-
-return "Hydrophobic";
-
-}
-
-return "Superhydrophobic";
-
-}
-
-imageInput.addEventListener(
-"click",
-function(){
-
-this.value = null;
-
-}
-);
-
-imageInput.addEventListener(
-"change",
-function(e){
-
-const file =
-e.target.files[0];
-
-if(!file){
-
-return;
-
-}
-
-mimeType =
-file.type ||
-"image/jpeg";
-
-const reader =
-new FileReader();
-
-reader.onload =
-function(event){
-
-const fullBase64 =
-event.target.result;
-
-base64Image =
-fullBase64.split(",")[1];
-
-const img =
-new Image();
-
-img.onload =
-function(){
-
-currentImage =
-img;
-
-canvas.width =
-img.width;
-
-canvas.height =
-img.height;
-
-canvas.classList.remove(
-"hidden"
-);
-
-placeholderText.classList.add(
-"hidden"
-);
-
-ctx.clearRect(
-0,
-0,
-canvas.width,
-canvas.height
-);
-
-ctx.drawImage(
-img,
-0,
+cv.GaussianBlur(
+gray,
+blur,
+new cv.Size(
+5,
+5
+),
 0
 );
 
-hideStatus();
+let thresh=
+new cv.Mat();
 
-};
+cv.threshold(
+blur,
+thresh,
+0,
+255,
+cv.THRESH_BINARY_INV +
+cv.THRESH_OTSU
+);
 
-img.src =
-fullBase64;
+let contours=
+new cv.MatVector();
 
-};
+let hierarchy=
+new cv.Mat();
 
-reader.readAsDataURL(
-file
+cv.findContours(
+thresh,
+contours,
+hierarchy,
+cv.RETR_EXTERNAL,
+cv.CHAIN_APPROX_SIMPLE
+);
+
+let largestArea=0;
+let largestContour=null;
+
+for(
+let i=0;
+i<contours.size();
+i++
+){
+
+let c=
+contours.get(i);
+
+let area=
+cv.contourArea(c);
+
+if(
+area >
+largestArea
+){
+
+largestArea=
+area;
+
+largestContour=
+c;
+
+}
+
+}
+
+if(
+largestContour===null
+){
+
+throw new Error(
+"ไม่พบหยดน้ำ"
 );
 
 }
+
+let rect=
+cv.boundingRect(
+largestContour
+);
+
+ctx.strokeStyle=
+"#ef4444";
+
+ctx.lineWidth=3;
+
+ctx.strokeRect(
+rect.x,
+rect.y,
+rect.width,
+rect.height
+);
+
+let topPoint={
+x:
+rect.x +
+(rect.width/2),
+y:
+rect.y
+};
+
+let leftPoint={
+x:rect.x,
+y:
+rect.y +
+rect.height
+};
+
+let rightPoint={
+x:
+rect.x +
+rect.width,
+y:
+rect.y +
+rect.height
+};
+
+ctx.fillStyle=
+"red";
+
+ctx.beginPath();
+
+ctx.arc(
+topPoint.x,
+topPoint.y,
+6,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+
+ctx.fillStyle=
+"blue";
+
+ctx.beginPath();
+
+ctx.arc(
+leftPoint.x,
+leftPoint.y,
+6,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+
+ctx.beginPath();
+
+ctx.arc(
+rightPoint.x,
+rightPoint.y,
+6,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+
+src.delete();
+gray.delete();
+blur.delete();
+thresh.delete();
+hierarchy.delete();
+contours.delete();
+
+return {
+
+rect,
+topPoint,
+leftPoint,
+rightPoint
+
+};
+
+}
+catch(error){
+
+console.error(
+error
+);
+
+showStatus(
+error.message,
+true
+);
+
+return null;
+
+}
+
+}
+
+function drawGuideLine(
+p1,
+p2,
+color="#22c55e"
+){
+
+ctx.beginPath();
+
+ctx.moveTo(
+p1.x,
+p1.y
+);
+
+ctx.lineTo(
+p2.x,
+p2.y
+);
+
+ctx.strokeStyle=
+color;
+
+ctx.lineWidth=
+2;
+
+ctx.stroke();
+
+}
+
+function estimateRadius(
+rect
+){
+
+return
+Math.max(
+rect.width,
+rect.height
+)/2;
+
+}
+
+function calculateTangentAngle(
+contactPoint,
+centerPoint
+){
+
+const dx=
+contactPoint.x-
+centerPoint.x;
+
+const dy=
+contactPoint.y-
+centerPoint.y;
+
+let normal=
+Math.atan2(
+dy,
+dx
+);
+
+let tangent=
+normal+
+(Math.PI/2);
+
+let degree=
+tangent*
+180/
+Math.PI;
+
+degree=
+Math.abs(
+degree
+);
+
+degree=
+degree%180;
+
+if(
+degree>90
+){
+
+degree=
+180-degree;
+
+}
+
+return degree;
+
+}
+async function measureContactAngle(){
+
+const result=
+await detectDroplet();
+
+if(!result){
+
+return;
+
+}
+
+const rect=
+result.rect;
+
+const top=
+result.topPoint;
+
+const left=
+result.leftPoint;
+
+const right=
+result.rightPoint;
+
+const center={
+x:
+rect.x +
+(rect.width/2),
+
+y:
+rect.y +
+(rect.height/2)
+};
+
+drawGuideLine(
+center,
+left
+);
+
+drawGuideLine(
+center,
+right
+);
+
+const leftAngle=
+calculateTangentAngle(
+left,
+center
+);
+
+const rightAngle=
+calculateTangentAngle(
+right,
+center
+);
+
+const averageAngle=
+(
+leftAngle+
+rightAngle
+)/2;
+
+document
+.getElementById(
+"angleResult"
+)
+.innerHTML=
+averageAngle.toFixed(1)
++"°";
+
+document
+.getElementById(
+"surfaceResult"
+)
+.innerHTML=
+classifySurface(
+averageAngle
 );
 
 document
 .getElementById(
-"clearBtn"
+"methodResult"
+)
+.innerHTML=
+"OpenCV";
+
+document
+.getElementById(
+"detailResult"
+)
+.innerHTML=
+`
+<div class="space-y-2">
+
+<div>
+Left Angle :
+<b>
+${leftAngle.toFixed(1)}°
+</b>
+</div>
+
+<div>
+Right Angle :
+<b>
+${rightAngle.toFixed(1)}°
+</b>
+</div>
+
+<div>
+Average :
+<b>
+${averageAngle.toFixed(1)}°
+</b>
+</div>
+
+<div>
+Contour Width :
+<b>
+${rect.width}px
+</b>
+</div>
+
+<div>
+Contour Height :
+<b>
+${rect.height}px
+</b>
+</div>
+
+</div>
+`;
+
+document
+.getElementById(
+"resultBox"
+)
+.classList.remove(
+"hidden"
+);
+
+showStatus(
+"วิเคราะห์สำเร็จ"
+);
+
+}
+
+document
+.getElementById(
+"measureBtn"
 )
 .addEventListener(
 "click",
+measureContactAngle
+);
+
+if(
+"serviceWorker"
+in navigator
+){
+
+window
+.addEventListener(
+"load",
 ()=>{
 
-base64Image =
-null;
-
-currentImage =
-null;
-
-ctx.clearRect(
-0,
-0,
-canvas.width,
-canvas.height
-);
-
-canvas.classList.add(
-"hidden"
-);
-
-placeholderText.classList.remove(
-"hidden"
-);
-
-document
-.getElementById(
-"aiResultContainer"
+navigator
+.serviceWorker
+.register(
+"./service-worker.js"
 )
-.classList.add(
-"hidden"
+.then(()=>{
+
+console.log(
+"SW Registered"
 );
-
-hideStatus();
-
-}
-);
-
-function getPrompt(){
-
-return `
-You are an expert in:
-
-- Surface Chemistry
-- Contact Angle Analysis
-- Wetting Theory
-- ASTM Contact Angle Evaluation
-
-Analyze this droplet image.
-
-Estimate:
-
-1. Contact angle in degree
-2. Confidence score
-3. Surface type
-4. Short explanation
-
-Return only valid JSON.
-
-{
-  "contact_angle": 0,
-  "confidence": 0,
-  "surface_type": "",
-  "explanation": ""
-}
-`;
-
-}
-
-async function callGemini(
-model,
-key
-){
-
-const response =
-await fetch(
-`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-{
-method:"POST",
-
-headers:{
-"Content-Type":
-"application/json"
-},
-
-body:JSON.stringify({
-
-contents:[
-{
-
-parts:[
-
-{
-text:getPrompt()
-},
-
-{
-inline_data:{
-mime_type:mimeType,
-data:base64Image
-}
-}
-
-]
-
-}
-
-]
 
 })
+.catch(
+console.error
+);
 
 }
 );
 
-const data =
-await response.json();
+}
 
-if(!response.ok){
-
-throw new Error(
-data?.error?.message ||
-"Gemini Error"
+console.log(
+"Contact Angle Analyzer Ready"
 );
 
-}
+</script>
 
-return data
-?.candidates?.[0]
-?.content?.parts?.[0]
-?.text;
-
-}
-
-async function callOpenAI(
-model,
-key
-){
-
-const response =
-await fetch(
-"https://api.openai.com/v1/chat/completions",
-{
-
-method:"POST",
-
-headers:{
-
-Authorization:
-`Bearer ${key}`,
-
-"Content-Type":
-"application/json"
-
-},
-
-body:JSON.stringify({
-
-model:model,
-
-messages:[
-
-{
-
-role:"user",
-
-content:[
-
-{
-type:"text",
-text:getPrompt()
-},
-
-{
-type:"image_url",
-
-image_url:{
-
-url:
-`data:${mimeType};base64,${base64Image}`
-
-}
-
-}
-
-]
-
-}
-
-],
-
-temperature:0
-
-})
-
-}
-);
-
-const data =
-await response.json();
-
-if(!response.ok){
-
-throw new Error(
-data?.error?.message ||
-"OpenAI Error"
-);
-
-}
-
-return data
-?.choices?.[0]
-?.message?.content;
-
-}
-
-async function callOpenRouter(
-model,
-key
-){
-
-const response =
-await fetch(
-"https://openrouter.ai/api/v1/chat/completions",
-{
-
-method:"POST",
-
-headers:{
-
-Authorization:
-`Bearer ${key}`,
-
-"Content-Type":
-"application/json"
-
-},
-
-body:JSON.stringify({
-
-model:model,
-
-messages:[
-
-{
-
-role:"user",
-
-content:[
-
-{
-type:"text",
-text:getPrompt()
-},
-
-{
-type:"image_url",
-
-image_url:{
-
-url:
-`data:${mimeType};base64,${base64Image}`
-
-}
-
-}
-
-]
-
-}
-
-]
-
-})
-
-}
-);
-
-const data =
-await response.json();
-
-if(!response.ok){
-
-throw new Error(
-data?.error?.message ||
-"OpenRouter Error"
-);
-
-}
-
-return data
-?.choices?.[0]
-?.message?.content;
-
-}
-
-async function analyzeImage(){
-
-const provider =
-document
-.getElementById(
-"providerSelect"
-)
-.value;
-
-const model =
-document
-.getElementById(
-"modelSelect"
-)
-.value;
-
-const apiKey =
-document
-.getElementById(
-"apiKeyInput"
-)
-.value
-.trim();
-
-if(!base64Image){
-
-showStatus(
-"กรุณาอัปโหลดรูปภาพ",
-"error"
-);
-
-return;
-
-}
-
-if(!apiKey){
-
-showStatus(
-"กรุณาใส่ API Key",
-"error"
-);
-
-return;
-
-}
-
-localStorage.setItem(
-"contact_angle_key",
-apiKey
-);
-
-const btn =
-document
-.getElementById(
-"analyzeBtn"
-);
-
-btn.disabled = true;
-
-btn.innerHTML =
-"⏳ กำลังวิเคราะห์...";
-
-hideStatus();
-
-let resultText = "";
-
-try{
-
-if(provider==="gemini"){
-
-resultText =
-await callGemini(
-model,
-apiKey
-);
-
-}
-
-else if(
-provider==="openai"
-){
-
-resultText =
-await callOpenAI(
-model,
-apiKey
-);
-
-}
-
-else if(
-provider==="openrouter"
-){
-
-resultText =
-await callOpenRouter(
-model,
-apiKey
-);
-
-}
+</body>
+</html>
